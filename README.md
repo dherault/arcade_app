@@ -1,2 +1,3 @@
-# arcade_app
-A collection of games
+# Arcade
+
+A collection of arcade games

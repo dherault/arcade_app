@@ -1,0 +1,13 @@
+.Snake-board {
+  display: flex;
+  flex-wrap: wrap;
+  border: 1px solid LightGrey;
+}
+
+.Snake-tile {
+  box-sizing: border-box;
+  color: LightGreen;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

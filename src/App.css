@@ -1,0 +1,10 @@
+.App-nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 20px 0px;
+}
+
+.App-nav > * {
+  margin: 0px 10px;
+}

@@ -1,0 +1,41 @@
+.MemoryTiles {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.MemoryTiles-header {
+  display: flex;
+  margin-bottom: 20px;
+}
+
+.MemoryTiles-header > span {
+  margin-right: 20px;
+}
+
+.MemoryTiles-header > button {
+  min-width: 30px;
+}
+
+.MemoryTiles-board {
+  text-align: center;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.Tile {
+  border: 1px solid #d7e8f5;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  user-select: none;
+  box-sizing: border-box;
+  font-size: 20px;
+}
+
+.Tile:hover {
+  border: 1px solid #00bcd4;
+}

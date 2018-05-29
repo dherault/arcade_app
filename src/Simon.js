@@ -60,46 +60,41 @@ const colors = [
 
 class Simon extends Component {
 
-  state = {
-    userTurn: false,
-    activeTile: -1,
-    sequenceIndex: -1,
-    sequence: [],
-  }
-
   componentWillMount() {
-    this.appendToSequence();
+    this.resetSequence();
   }
 
   componentDidMount() {
-    this.playSequence();
+    setTimeout(this.playSequence, 1000);
   }
 
-  appendToSequence() {
-    const sequence = this.state.sequence.slice();
-
-    sequence.push(Math.floor(Math.random() * 4));
-
-    this.setState({ sequence, userSequence: [] });
+  resetSequence() {
+    this.setState({
+      sequence: [Math.floor(Math.random() * 4)],
+      sequenceIndex: 0,
+      userTurn: false,
+    })
   }
 
   playSequence = () => {
     const { sequence, sequenceIndex } = this.state;
 
-    if (sequenceIndex === sequence.length - 1) {
+    if (sequenceIndex === sequence.length) {
       return this.setState({
-        activeTile: -1,
         userTurn: true,
-        sequenceIndex: -1,
+        activeTile: -1,
+        sequenceIndex: 0,
       });
-    };
+    }
 
     this.setState({
-      activeTile: sequence[sequenceIndex + 1],
+      activeTile: sequence[sequenceIndex],
       sequenceIndex: sequenceIndex + 1,
     });
 
-    setTimeout(this.playSequence, 1000);
+    setTimeout(() => this.setState({ activeTile: -1 }), 450);
+
+    setTimeout(this.playSequence, 500);
   }
 
   handleClick = n => {
@@ -107,24 +102,54 @@ class Simon extends Component {
 
     if (!userTurn) return;
 
-    const nextState = {};
+    // const nextState = {};
 
-    if (sequence[sequenceIndex + 1] === n) {
-      nextState.sequenceIndex = sequenceIndex + 1;
+    if (sequence[sequenceIndex] === n) {
+      if (sequenceIndex === sequence.length - 1) {
+        this.setState({
+          activeTile: n,
+          sequence: [...sequence, Math.floor(Math.random() * 4)],
+          sequenceIndex: 0,
+          userTurn: false,
+        });
+
+        setTimeout(this.playSequence, 1000);
+      }
+      else {
+        this.setState({
+          activeTile: n,
+          sequenceIndex: sequenceIndex + 1,
+        });
+      }
+
+      setTimeout(() => this.setState({ activeTile: -1 }), 250);
     }
+    else {
+      this.resetSequence();
 
+      this.setState({
+        allTilesActive: true,
+      });
+
+      setTimeout(() => this.setState({ allTilesActive: false }), 500);
+      setTimeout(() => this.setState({ allTilesActive: true }), 1000);
+      setTimeout(() => this.setState({ allTilesActive: false }), 1500);
+      setTimeout(() => this.setState({ allTilesActive: true }), 2000);
+      setTimeout(() => this.setState({ allTilesActive: false }), 2500);
+
+      setTimeout(this.playSequence, 3000);
+    }
   }
 
   render() {
-    console.log('this.state.sequence:', this.state.sequence);
-    const { activeTile } = this.state;
+    const { sequence, activeTile, allTilesActive } = this.state;
 
     return (
       <svg viewBox="-50 -50 100 100" width="300px">
-        <path d={dYellow} fill={activeTile === 0 ? colors[0 * 2 + 1] : colors[0 * 2]} />
-        <path d={dRed} fill={activeTile === 1 ? colors[1 * 2 + 1] : colors[1 * 2]} />
-        <path d={dGreen} fill={activeTile === 2 ? colors[2 * 2 + 1] : colors[2 * 2]} />
-        <path d={dBlue} fill={activeTile === 3 ? colors[3 * 2 + 1] : colors[3 * 2]} />
+        <path d={dYellow} fill={allTilesActive || activeTile === 0 ? colors[0 * 2 + 1] : colors[0 * 2]} onClick={() => this.handleClick(0)} />
+        <path d={dRed} fill={allTilesActive || activeTile === 1 ? colors[1 * 2 + 1] : colors[1 * 2]} onClick={() => this.handleClick(1)} />
+        <path d={dGreen} fill={allTilesActive || activeTile === 2 ? colors[2 * 2 + 1] : colors[2 * 2]} onClick={() => this.handleClick(2)} />
+        <path d={dBlue} fill={allTilesActive || activeTile === 3 ? colors[3 * 2 + 1] : colors[3 * 2]} onClick={() => this.handleClick(3)} />
       </svg>
     )
   }

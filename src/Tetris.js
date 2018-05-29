@@ -1,29 +1,75 @@
 import React, { Component } from 'react';
 import './Tetris.css';
 
-const boardSizeX = 10;
+/* -------
+  Params
+------- */
+
+const boardSizeX = 10; // tiles
 const boardSizeY = 18;
 const tileSize = 2; // vw
 
+const initialFallPeriod = 1000; // ms
+const minFallPeriod = 200;
+
+const indexToColor = ['', 'Red', 'Lime', 'Orange', 'Blue', 'Yellow', 'Aqua', 'MediumPurple'];
+
+const shapeDefinitions = [
+  [
+    [0, 1],
+    [1, 1],
+    [1, 0],
+  ],
+  [
+    [2, 0],
+    [2, 2],
+    [0, 2],
+  ],
+  [
+    [3, 3],
+    [0, 3],
+    [0, 3],
+  ],
+  [
+    [4, 4],
+    [4, 0],
+    [4, 0],
+  ],
+  [
+    [5, 5],
+    [5, 5],
+  ],
+  [
+    [6, 6, 6, 6],
+  ],
+  [
+    [0, 7, 0],
+    [7, 7, 7],
+  ],
+];
+
+// Empty row for reuse
 const emptyRow = [];
 
 for (let x = 0; x < boardSizeX; x++) {
   emptyRow.push(0);
 }
 
+/* -----
+  Shape
+------ */
+
 class Shape {
   constructor(definition) {
-    this.originalDefinition = definition;
+    this.definition = definition;
 
-    this.init();
+    this.dimX = definition[0].length;
+    this.dimY = definition.length;
+
+    this.resetPos();
   }
 
-  init() {
-    this.definition = this.originalDefinition;
-
-    this.dimX = this.definition[0].length;
-    this.dimY = this.definition.length;
-
+  resetPos() {
     this.posX = Math.floor(boardSizeX / 2 - this.dimX / 2);
     this.posY = -this.dimY;
   }
@@ -71,6 +117,8 @@ class Shape {
     if (this.posX + this.dimX > boardSizeX) {
       this.posX = boardSizeX - this.dimX;
     }
+
+    this.posY += this.dimX - this.dimY;
   }
 
   getLeftColisionTiles() {
@@ -149,16 +197,13 @@ class Shape {
   }
 }
 
+/* -----------
+  BottomLayer
+------------ */
+
 class BottomLayer {
-  constructor() {
-    this.board = [
-      [1, 1, 0, 0, 1, 1, 0, 1, 1, 0],
-      [1, 0, 0, 0, 0, 1, 1, 0, 1, 0],
-      [1, 1, 1, 1, 0, 1, 1, 1, 0, 0],
-      [1, 1, 1, 0, 1, 1, 1, 1, 0, 1],
-      [1, 1, 1, 0, 1, 1, 0, 1, 0, 1],
-    ];
-  }
+
+  board = []
 
   getColisionTiles() {
     if (this.colisionTiles) return this.colisionTiles;
@@ -177,9 +222,9 @@ class BottomLayer {
 
     const floodedBoardLength = floodedBoard.length;
 
+    let rowIndex = 1;
     let nFloodedTiles = 0;
     let nNextFloodedTiles = 0;
-    let rowIndex = 1;
 
     do {
       nNextFloodedTiles = nFloodedTiles;
@@ -264,83 +309,133 @@ class BottomLayer {
   addShape(shape) {
     const { posX, posY, dimX, dimY, definition } = shape;
 
-    for (let y = posY; y <= boardSizeY - this.board.length + 1; y++) {
-      console.log('unshift:');
+    let boardLength = this.board.length;
+
+    // Add additional rows if necessary
+    for (let y = posY; y < boardSizeY - boardLength; y++) {
       this.board.unshift(emptyRow.slice());
     }
 
-    console.log('this.board:', this.board);
+    boardLength = this.board.length;
 
-    const boardLength = this.board.length;
-
+    // Add shape to bottom layer
     for (let x = 0; x < dimX; x++) {
       for (let y = 0; y < dimY; y++) {
         if (definition[y][x]) {
-          console.log(posY + boardLength - boardSizeY + y);
           this.board[posY + boardLength - boardSizeY + y][x + posX] = definition[y][x];
         }
       }
     }
 
+    // Clear full rows
     const nextBoard = [];
 
     this.board.forEach(row => !row.every(tile => tile) && nextBoard.push(row));
 
+    const nClearedRows = boardLength - nextBoard.length;
+
+    // Set new board
+    this.board = nextBoard;
+
+    // Recompute colision tiles
     this.computeColisionTiles();
 
-    this.board = nextBoard;
+    // Indicate how many rows were cleared
+    return nClearedRows;
   }
 }
 
-const indexToColor = ['', 'yellow', 'green', 'red', 'purple'];
+/* ------
+  Tetris
+------- */
 
-const shapes = [
-  // new Shape([
-  //   [0, 1],
-  //   [1, 1],
-  //   [1, 0],
-  // ]),
-  // new Shape([
-  //   [2, 2],
-  //   [2, 2],
-  // ]),
-  // new Shape([
-  //   [3, 3, 3, 3],
-  // ]),
-  new Shape([
-    [4, 4],
-    [0, 4],
-    [0, 4],
-  ]),
-];
+const pickShape = () => new Shape(shapeDefinitions[Math.floor(Math.random() * shapeDefinitions.length)]);
 
-function randomItem(array) {
-  return array[Math.floor(Math.random() * array.length)];
-}
+const ShapePreview = ({ shape }) => !!shape && shape.definition.map((row, j) => (
+  <div style={{ display: 'flex' }} key={j}>
+    {row.map((c, i) => (
+      <div
+        key={i}
+        style={{
+          width: `${tileSize}vw`,
+          height: `${tileSize}vw`,
+          backgroundColor: indexToColor[c],
+        }}
+      />
+    ))}
+  </div>
+));
 
 class Tetris extends Component {
 
-  componentWillMount() {
-    this.createNewGame();
+  constructor() {
+    super();
+
+    this.moveShapeDown = this.moveShapeDown.bind(this);
+    this.setFallInterval = this.setFallInterval.bind(this);
+
+    this.keyBindings = [
+      e => e.code === 'ArrowUp' && this.rotateShape(),
+      e => e.code === 'ArrowDown' && this.moveShapeDown(),
+      e => e.code === 'ArrowLeft' && this.moveShapeLeft(),
+      e => e.code === 'ArrowRight' && this.moveShapeRight(),
+      e => e.code === 'Space' && this.holdShape(),
+    ];
+
+    this.state = {
+      level: 0,
+      gameOver: false,
+      shape: pickShape(),
+      nextShape: pickShape(),
+      heldShape: null,
+      bottomLayer: new BottomLayer(),
+    };
   }
 
   componentDidMount() {
-    // this.moveShapeDownInterval = setInterval(this.moveShapeDown.bind(this), 1000);
-
-    window.addEventListener('keydown', e => e.key === 'ArrowLeft' && this.moveShapeLeft());
-    window.addEventListener('keydown', e => e.key === 'ArrowRight' && this.moveShapeRight());
-    window.addEventListener('keydown', e => e.key === 'ArrowDown' && this.moveShapeDown());
-    window.addEventListener('keydown', e => e.key === 'ArrowUp' && this.rotateShape());
+    this.addKeyBindings();
+    this.setFallInterval();
   }
 
-  createNewGame() {
+  componentWillUnmount() {
+    this.removeKeyBindings();
+    clearInterval(this.fallInterval);
+  }
+
+  addKeyBindings() {
+    this.keyBindings.forEach(listener => window.addEventListener('keydown', listener));
+  }
+
+  removeKeyBindings() {
+    this.keyBindings.forEach(listener => window.removeEventListener('keydown', listener));
+  }
+
+  setFallInterval() {
+    if (this.fallInterval) clearInterval(this.fallInterval);
+
+    const { level, gameOver } = this.state;
+
+    if (gameOver) return;
+
+    const period = Math.max(minFallPeriod, initialFallPeriod - level * 20);
+
+    this.fallInterval = setInterval(this.moveShapeDown, period);
+  }
+
+  resetGame() {
+    this.addKeyBindings();
+
     this.setState({
-      shape: randomItem(shapes),
+      level: 0,
+      gameOver: false,
+      shape: pickShape(),
+      nextShape: pickShape(),
+      heldShape: null,
       bottomLayer: new BottomLayer(),
-    });
+    }, this.setFallInterval);
   }
 
-  checkColision(shapeColisionTiles, ) {
+  checkColision(shapeColisionTiles) {
     const bottomLayerColisionTiles = this.state.bottomLayer.getColisionTiles();
 
     return shapeColisionTiles.some(({ x, y }) =>
@@ -351,23 +446,26 @@ class Tetris extends Component {
   }
 
   moveShapeDown() {
-    const { shape, bottomLayer } = this.state;
+    const { shape, nextShape, bottomLayer, level } = this.state;
 
     shape.posY++;
 
-    if (this.checkColision(shape.getBottomColisionTiles())) {
+    if (shape.posY + shape.dimY === boardSizeY + 1 || this.checkColision(shape.getBottomColisionTiles())) {
       shape.posY--;
 
-      bottomLayer.addShape(shape);
+      const nClearedRows = bottomLayer.addShape(shape);
+      const nextNextShape = pickShape();
+      const gameOver = bottomLayer.board.length >= boardSizeY;
 
-      const nextShape = randomItem(shapes);
-
-      nextShape.init();
+      if (gameOver) this.removeKeyBindings();
 
       this.setState({
-        shape: nextShape,
+        gameOver,
         bottomLayer,
-      });
+        shape: nextShape,
+        nextShape: nextNextShape,
+        level: level + nClearedRows,
+      }, this.setFallInterval);
     }
     else {
       this.setState({ shape });
@@ -412,24 +510,58 @@ class Tetris extends Component {
     this.setState({ shape });
   }
 
-  render() {
-    const { shape, bottomLayer } = this.state;
+  holdShape() {
+    const { shape, nextShape, heldShape } = this.state;
 
-    console.log('shape.posY:', shape.posY);
+    if (!heldShape) {
+      return this.setState({
+        shape: nextShape,
+        heldShape: shape,
+        nextShape: pickShape(),
+      });
+    }
+
+    heldShape.resetPos();
+
+    this.setState({
+      shape: heldShape,
+      heldShape: shape,
+    });
+  }
+
+  render() {
+    const { shape, nextShape, heldShape, bottomLayer, level, gameOver } = this.state;
+
+    // Construct board from bottom layer
     const board = bottomLayer.board.map(row => row.slice());
 
+    // Remove overflowing rows at end game
+    while (board.length > boardSizeY) {
+      board.shift();
+    }
+
+    // Add empty rows to complete the board
     for (let y = board.length; y < boardSizeY; y++) {
       board.unshift(emptyRow.slice());
     }
 
+    // Display the falling shape
     shape.getTiles().forEach(({ x, y, c }) => board[y][x] = c);
 
-    bottomLayer.getColisionTiles().forEach(({ x, y }) => {
-      board[y][x] = 2;
-    });
+    // bottomLayer.getColisionTiles().forEach(({ x, y }) => board[y][x] = 2 });
 
     return (
       <div className="Tetris">
+        <div className="Tetris-panel">
+          <div>Next:</div>
+          <div className="Tetris-shapepreview">
+            <ShapePreview shape={nextShape} />
+          </div>
+          <div>On hold:</div>
+          <div className="Tetris-shapepreview">
+            <ShapePreview shape={heldShape} />
+          </div>
+        </div>
         <div
           className="Tetris-board"
           style={{
@@ -449,6 +581,17 @@ class Tetris extends Component {
               />
             ))
           ))}
+        </div>
+        <div className="Tetris-panel">
+          <div>Level {level}</div>
+          {gameOver && (
+            <div className="Tetris-gameover">
+              <div>Game over!</div>
+              <div>
+                <button className="Tetris-gameover-button" onClick={() => this.resetGame()}>New game</button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     );

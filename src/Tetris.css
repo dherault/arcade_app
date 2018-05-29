@@ -1,3 +1,13 @@
+.Tetris {
+  display: flex;
+  justify-content: center;
+}
+
+.Tetris-panel {
+  min-width: 10vw;
+  margin: 0 20px;
+}
+
 .Tetris-board {
   display: flex;
   flex-wrap: wrap;

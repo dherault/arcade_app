@@ -10,14 +10,24 @@ const typeToColor = ['transparent', 'black', 'red'];
 
 class Snake extends Component {
 
+  eventListeners = [
+    ['keydown', this.handleKeyDown.bind(this)],
+    ['keyup', this.handleKeyUp.bind(this)],
+  ]
+
   componentWillMount() {
     this.generateBoardConfiguration();
   }
 
   componentDidMount() {
-    window.addEventListener('keydown', this.handleKeyDown.bind(this), false);
-    window.addEventListener('keyup', this.handleKeyUp.bind(this), false);
+    this.eventListeners.forEach(([type, listener]) => window.addEventListener(type, listener));
     this.update();
+  }
+
+  componentWillUnmount() {
+    this.eventListeners.forEach(([type, listener]) => window.removeEventListener(type, listener));
+
+    this.nextTick && clearTimeout(this.nextTick);
   }
 
   handleKeyDown(e) {
@@ -152,7 +162,7 @@ class Snake extends Component {
     const workingSpeed = (nextState.speed || speed) * (speedUp ? 0.33 : 1);
 
     this.setState(nextState);
-    setTimeout(() => this.update(), workingSpeed);
+    this.nextTick = setTimeout(() => this.update(), workingSpeed);
   }
 
   render() {

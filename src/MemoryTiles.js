@@ -8,7 +8,7 @@ const Tile = ({ active, symbol, width, onClick }) => (
     style={{
       minWidth: `${width}vw`,
       minHeight: `${width}vw`,
-      backgroundColor: active ? '#d7e8f5' : 'transparent',
+      backgroundColor: active ? 'transparent' : '#d7e8f5',
     }}
   >
     {active && symbol || ''}
